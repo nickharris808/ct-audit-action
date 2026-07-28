@@ -1,0 +1,16 @@
+# The deliverable here is a GitHub Action, not a Python distribution. This file
+# exists so `ruff` and `pytest` share the same configuration as the sibling packages.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["build", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF", "PERF", "ISC", "PL"]
+# PLC0415: audit.py imports ctbench lazily so --help works without it installed.
+# E402: tests must extend sys.path before importing the action script.
+ignore = ["PLR2004", "PLR0912", "PLR0915", "E501", "PLC0415", "PERF203", "E402"]

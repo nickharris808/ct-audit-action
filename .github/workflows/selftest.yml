@@ -1,0 +1,54 @@
+name: self-test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -r requirements-dev.txt
+      - run: pytest tests -q
+      - run: ruff check .
+
+  # Prove the action works when used the way users will use it.
+  action-detects-a-leak:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write a deliberately leaky module
+        run: |
+          mkdir -p demo && cat > demo/leaky.v <<'VERILOG'
+          module leaky (clk, rst, start, x, y, done);
+              input clk, rst, start;
+              input [7:0] x, y;
+              output done;
+              reg [7:0] xr, yr;
+              reg running;
+              assign done = running & (xr == yr);
+              always @(posedge clk) begin
+                  if (rst) running <= 1'b0;
+                  else if (start) begin xr <= x; yr <= y; running <= 1'b1; end
+                  else if (running) begin if (xr != yr) running <= 1'b0; end
+              end
+          endmodule
+          VERILOG
+      - uses: ./
+        id: audit
+        with:
+          files: demo/leaky.v
+          secrets: x,y
+          fail-on-leak: false
+      - name: The action must have found exactly one leak
+        run: |
+          test "${{ steps.audit.outputs.leaks }}" = "1" \
+            || { echo "expected 1 leak, got ${{ steps.audit.outputs.leaks }}"; exit 1; }
+          test "${{ steps.audit.outputs.checked }}" = "1"

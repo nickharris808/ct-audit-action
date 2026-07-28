@@ -1,0 +1,25 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  retag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Move the floating major tag
+        run: |
+          MAJOR="${GITHUB_REF_NAME%%.*}"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f "$MAJOR" "$GITHUB_REF_NAME"
+          git push -f origin "$MAJOR"
+      - name: Publish a release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true

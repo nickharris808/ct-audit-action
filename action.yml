@@ -1,0 +1,77 @@
+name: "Constant-time audit"
+description: >-
+  Fail a pull request when a completion signal in your RTL depends on a secret input.
+  Names the leaking signals in the job summary and as inline annotations.
+author: "ct-audit contributors"
+
+branding:
+  icon: "shield"
+  color: "purple"
+
+inputs:
+  files:
+    description: >-
+      Newline- or comma-separated list of Verilog files to check. Globs are expanded.
+      Defaults to every .v file tracked by git.
+    required: false
+    default: ""
+  secrets:
+    description: >-
+      Comma-separated input names to treat as secret. Required unless a config file
+      supplies per-file secrets, because secrets are a specification choice and are
+      never inferred.
+    required: false
+    default: ""
+  observation:
+    description: "Completion signal name."
+    required: false
+    default: "done"
+  config:
+    description: >-
+      Path to a JSON config giving per-file observation/secrets, in the same shape as
+      a ctbench manifest entry. Overrides the `secrets` and `observation` inputs for
+      any file it lists.
+    required: false
+    default: ""
+  fail-on-leak:
+    description: "Fail the job when a leak is found. Set false to report only."
+    required: false
+    default: "true"
+  python-version:
+    description: "Python version used to run the checker."
+    required: false
+    default: "3.11"
+
+outputs:
+  leaks:
+    description: "Number of files whose completion signal depends on a secret."
+    value: ${{ steps.audit.outputs.leaks }}
+  checked:
+    description: "Number of files checked."
+    value: ${{ steps.audit.outputs.checked }}
+  report:
+    description: "Path to the JSON report."
+    value: ${{ steps.audit.outputs.report }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install the checker
+      shell: bash
+      run: python -m pip install --quiet --disable-pip-version-check ctbench
+
+    - name: Run the constant-time audit
+      id: audit
+      shell: bash
+      env:
+        CTA_FILES: ${{ inputs.files }}
+        CTA_SECRETS: ${{ inputs.secrets }}
+        CTA_OBSERVATION: ${{ inputs.observation }}
+        CTA_CONFIG: ${{ inputs.config }}
+        CTA_FAIL_ON_LEAK: ${{ inputs.fail-on-leak }}
+      run: python "${{ github.action_path }}/audit.py"
