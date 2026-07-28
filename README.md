@@ -171,6 +171,11 @@ This runs inside your CI, on your source. If you need a third party to believe t
 without receiving the RTL, that needs a proof bound to a commitment of a design that is
 never disclosed — a commercial capability, not part of this action.
 
+## Documentation
+
+- [SCOPE.md](SCOPE.md) — what the action checks, and why `unknown` is counted
+  separately from `checked`.
+
 <!-- portfolio:start -->
 ## Part of the hw-verify toolkit
 
