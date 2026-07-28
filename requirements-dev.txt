@@ -1,6 +1,9 @@
 # Test dependencies for the action. The action itself needs only `ctbench`,
 # which action.yml installs on the runner.
-ctbench>=1.0
+# The three checkers are not on PyPI, so they are installed straight from their
+# public repositories. This is what makes a clean `pip install -r` work today for
+# anyone; swap these for plain version specifiers once they are published.
+ctbench @ git+https://github.com/nickharris808/ctbench@main
 pytest>=7.4
 pyyaml>=6.0
 ruff>=0.14,<0.15
