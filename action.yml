@@ -49,6 +49,9 @@ outputs:
   checked:
     description: "Number of files checked."
     value: ${{ steps.audit.outputs.checked }}
+  unknown:
+    description: "Number of files that reached NO verdict and were not checked."
+    value: ${{ steps.audit.outputs.unknown }}
   report:
     description: "Path to the JSON report."
     value: ${{ steps.audit.outputs.report }}

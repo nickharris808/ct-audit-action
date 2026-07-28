@@ -171,11 +171,40 @@ def test_unparseable_file_warns_and_does_not_crash(workdir, monkeypatch, capsys)
 
 
 def test_missing_observation_signal_is_an_error_not_a_pass(workdir, monkeypatch, capsys):
+    """A file with no completion signal must never land in the checked-and-clean column."""
     (workdir / "nodone.v").write_text("module nodone(a); input a; endmodule")
     _run(monkeypatch, CTA_FILES="nodone.v", CTA_SECRETS="a")
     report = json.loads(Path("ct-audit-report.json").read_text())
-    assert report["results"][0]["status"] == "error"
+    assert report["results"][0]["status"] in ("error", "unknown")
     assert report["checked"] == 0
+    assert report["results"][0].get("verdict") != "CONSTANT_TIME"
+
+
+def test_an_unanalysable_file_is_reported_as_unknown_not_constant_time(workdir, monkeypatch, capsys):
+    """The Action-level form of the unsoundness bug.
+
+    `sub u(...)` hides every dependency edge, so the checker cannot see whether
+    `done` depends on the key. The summary table used to render anything that was
+    not LEAKY as "constant-time", which turned "we could not read this" into a pass
+    displayed on the PR page.
+    """
+    (workdir / "hier.v").write_text(
+        "module top(clk, key, done);\n"
+        "  input clk; input [7:0] key; output done;\n"
+        "  child u_child (.clk(clk), .key(key), .done(done));\n"
+        "endmodule\n"
+    )
+    _run(monkeypatch, CTA_FILES="hier.v", CTA_SECRETS="key")
+    out = capsys.readouterr().out
+    report = json.loads(Path("ct-audit-report.json").read_text())
+
+    assert report["results"][0]["status"] == "unknown"
+    assert report["unknown"] == 1
+    assert report["checked"] == 0
+    assert "::warning" in out and "NO VERDICT" in out
+    # the rendered table must not describe it as constant-time
+    assert "UNKNOWN — not checked" in out
+    assert "| constant-time |" not in out
 
 
 # ---------------------------------------------------------------------------
@@ -225,7 +254,7 @@ def test_action_yml_is_valid_and_wires_every_input():
 
 def test_action_outputs_match_what_the_script_writes():
     meta = yaml.safe_load((ACTION_DIR / "action.yml").read_text())
-    assert set(meta["outputs"]) == {"leaks", "checked", "report"}
+    assert set(meta["outputs"]) == {"leaks", "checked", "unknown", "report"}
 
 
 def test_action_installs_the_checker():

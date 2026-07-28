@@ -142,9 +142,15 @@ look like a pass.
 
 Verdicts cover **completion timing** against the declared secrets. Not power, not EM, not
 cache, not microarchitectural state. The checker is a syntactic fan-in analysis including
-every enclosing `if`/`case` guard, so it **over-approximates**: `constant-time` is
-conservative, and `LEAKY` names the reaching signals so a human can confirm rather than
-take it on faith. An unparseable file produces a warning, never a silent pass.
+every enclosing `if`/`case` guard, so **within the supported subset** it
+**over-approximates**: `constant-time` is conservative there, and `LEAKY` names the
+reaching signals so a human can confirm rather than take it on faith.
+
+A file the checker cannot read — one containing a submodule instantiation, a `for` loop,
+`generate`, a `function`, or a macro — is reported as **`UNKNOWN — not checked`** in the
+job summary and carries a warning annotation. It is counted in the `unknown` output, never
+in `checked`, and never rendered as constant-time. An unparseable file produces a warning,
+never a silent pass.
 
 ## Development
 
@@ -153,7 +159,7 @@ pip install -r requirements-dev.txt
 pytest tests -q && ruff check .
 ```
 
-16 tests, run without a GitHub runner: the action is a Python script driven by `CTA_*`
+17 tests, run without a GitHub runner: the action is a Python script driven by `CTA_*`
 environment variables precisely so it is testable. `action.yml` itself is parsed and
 checked — every declared input must reach the script, and the declared outputs must match
 what the script writes. The self-test workflow also runs the action *as a user would*,

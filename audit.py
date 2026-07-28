@@ -64,15 +64,20 @@ def load_config(path: str) -> dict[str, dict[str, Any]]:
 
 def audit_one(path: Path, observation: str, secrets: list[str],
               module: str | None) -> dict[str, Any]:
-    from ctbench.cone import analyse
+    from ctbench.cone import UNKNOWN, check
 
     try:
-        v = analyse(path.read_text(), observation, secrets, module)
+        v = check(path.read_text(), observation, secrets, module)
     except ValueError as exc:
         return {"file": str(path), "status": "error", "detail": str(exc)}
     d = v.to_dict()
     d["file"] = str(path)
-    d["status"] = "checked"
+    # An UNKNOWN is not a check that happened to come out clean: nothing was
+    # analysed.  Keeping it out of "checked" is what stops the summary table from
+    # rendering it in the same column as a real constant-time verdict.
+    d["status"] = "unknown" if v.status == UNKNOWN else "checked"
+    if v.status == UNKNOWN:
+        d["detail"] = v.reason or "no verdict could be reached"
     return d
 
 
@@ -81,6 +86,11 @@ def annotate(result: dict[str, Any]) -> None:
     f = result["file"]
     if result["status"] == "error":
         print(f"::warning file={f}::ct-audit could not parse this file: {result['detail']}")
+    elif result["status"] == "unknown":
+        print(
+            f"::warning file={f}::ct-audit reached NO VERDICT for this file — it was "
+            f"NOT checked and must not be read as constant-time. {result['detail']}"
+        )
     elif result["status"] == "skipped":
         print(f"::notice file={f}::ct-audit skipped: {result['detail']}")
     elif result["verdict"] == "LEAKY":
@@ -93,7 +103,8 @@ def annotate(result: dict[str, Any]) -> None:
 
 def summary(results: list[dict[str, Any]]) -> str:
     leaky = [r for r in results if r.get("verdict") == "LEAKY"]
-    clean = [r for r in results if r.get("verdict") == "CONSTANT_TIME"]
+    clean = [r for r in results if r.get("verdict") == "CONSTANT_TIME" and r["status"] == "checked"]
+    unknown = [r for r in results if r["status"] == "unknown"]
 
     lines = ["## Constant-time audit", ""]
     if leaky:
@@ -102,9 +113,18 @@ def summary(results: list[dict[str, Any]]) -> str:
         lines.append(f"All {len(clean)} checked file(s) are constant-time.")
     else:
         lines.append("Nothing was checked.")
+    if unknown:
+        # Stated separately and up front: a reader who skims the headline must not
+        # come away thinking these files were cleared.
+        lines.append(
+            f"\n**{len(unknown)} file(s) could not be analysed and were NOT checked.** "
+            f"They are neither constant-time nor leaky here — no verdict was reached."
+        )
     lines += ["", "| File | Verdict | Reaching secrets |", "|---|---|---|"]
     for r in results:
-        if r["status"] != "checked":
+        if r["status"] == "unknown":
+            lines.append(f"| `{r['file']}` | **UNKNOWN — not checked** | {r.get('detail', '')[:90]} |")
+        elif r["status"] != "checked":
             lines.append(f"| `{r['file']}` | {r['status']} | {r.get('detail', '')} |")
         else:
             mark = "**LEAKY**" if r["verdict"] == "LEAKY" else "constant-time"
@@ -149,10 +169,11 @@ def main() -> int:
 
     leaks = sum(1 for r in results if r.get("verdict") == "LEAKY")
     checked = sum(1 for r in results if r["status"] == "checked")
+    unknown = sum(1 for r in results if r["status"] == "unknown")
 
     report_path = Path("ct-audit-report.json")
     report_path.write_text(json.dumps({
-        "checked": checked, "leaks": leaks, "results": results,
+        "checked": checked, "leaks": leaks, "unknown": unknown, "results": results,
     }, indent=2) + "\n")
 
     text = summary(results)
@@ -162,7 +183,10 @@ def main() -> int:
             fh.write(text + "\n")
     if out := os.environ.get("GITHUB_OUTPUT"):
         with open(out, "a") as fh:
-            fh.write(f"leaks={leaks}\nchecked={checked}\nreport={report_path}\n")
+            fh.write(
+                f"leaks={leaks}\nchecked={checked}\nunknown={unknown}\n"
+                f"report={report_path}\n"
+            )
 
     if leaks and fail_on_leak:
         return 1
