@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Action](https://img.shields.io/badge/GitHub-Action-2088FF.svg)](action.yml)
-[![CI](https://img.shields.io/badge/CI-self--tested-brightgreen.svg)](.github/workflows/selftest.yml)
+[![CI](https://github.com/nickharris808/ct-audit-action/actions/workflows/selftest.yml/badge.svg)](https://github.com/nickharris808/ct-audit-action/actions/workflows/selftest.yml)
 
 > **▶ [Try it in your browser](https://huggingface.co/spaces/nickh007/hw-verify)** — paste Verilog, get a formal constant-time verdict with the leaking signals named. No install, nothing uploaded.
 
