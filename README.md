@@ -176,6 +176,17 @@ never disclosed — a commercial capability, not part of this action.
 - [SCOPE.md](SCOPE.md) — what the action checks, and why `unknown` is counted
   separately from `checked`.
 
+## Citation
+
+[CITATION.cff](CITATION.cff) has the metadata, and GitHub renders a "Cite this
+repository" button from it.
+
+## Contributing
+
+A workflow where the action behaves surprisingly is the most valuable report —
+especially one where a file was reported as checked when it was not. Issues welcome
+on [the repository](https://github.com/nickharris808/ct-audit-action).
+
 <!-- portfolio:start -->
 ## Part of the hw-verify toolkit
 
@@ -184,9 +195,10 @@ They share one boundary: **everything open analyses a design you disclose in ful
 
 | Project | What it does |
 |---|---|
-| **▶ [Live demo](https://huggingface.co/spaces/nickh007/hw-verify)** | Constant-time checker in your browser — runs the real analyzer via Pyodide |
+| **▶ [Live demo](https://huggingface.co/spaces/nickh007/hw-verify)** | Constant-time checker in your browser — the real analyzer via Pyodide |
+| [**Docs & overview**](https://huggingface.co/spaces/nickh007/hw-verify-site) | What the toolkit proves, and what it refuses to answer |
 | [`hw-verify`](https://github.com/nickharris808/hw-verify) | One install, one command, all three checkers |
-| [`ctbench`](https://github.com/nickharris808/ctbench) | Matched-pair constant-time RTL benchmark + leaderboard |
+| [`ctbench`](https://github.com/nickharris808/ctbench) | Matched-pair constant-time RTL benchmark + [leaderboard](https://github.com/nickharris808/ctbench#the-leaderboard) |
 | [`patchproof`](https://github.com/nickharris808/patchproof) | Prove a bounds-check fix eliminates *every* violating input |
 | [`patchproof-verify`](https://github.com/nickharris808/patchproof-verify) | Re-check its certificates in Rust, with no shared code |
 | [`ct-mask`](https://github.com/nickharris808/ct-mask) | First-order masking verification by two certificates |

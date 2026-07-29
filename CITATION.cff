@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: "ct-audit-action: constant-time RTL auditing on every pull request"
+message: "If you use this in academic work, please cite it."
+type: software
+authors:
+  - alias: nickharris808
+    website: "https://github.com/nickharris808"
+repository-code: "https://github.com/nickharris808/ct-audit-action"
+url: "https://huggingface.co/spaces/nickh007/hw-verify-site"
+abstract: >-
+  A GitHub Action that runs a constant-time fan-in analysis over changed Verilog and
+  reports leaks as annotations on the diff. Secrets are declared rather than inferred,
+  so a file with none is skipped and reported as skipped. Files the analysis cannot
+  read are counted separately from checked files and never rendered as constant-time,
+  so an unanalysable file cannot quietly appear to pass review.
+keywords:
+  - continuous integration
+  - constant-time
+  - side-channel
+  - hardware security
+  - static analysis
+license: Apache-2.0
+version: "1.0.0"
+date-released: "2026-07-28"
